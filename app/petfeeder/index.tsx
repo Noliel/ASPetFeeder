@@ -1,31 +1,27 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, BackHandler } from "react-native";
+import { View, Text, FlatList, Switch, Button, TouchableOpacity, TextInput, ScrollView, BackHandler } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useNavigation } from "expo-router";
 
-interface Schedule {
-  time: string;
-  weight: string;
-  isOn: boolean;
-}
+const PetFeeder = () => {
+  const params = useLocalSearchParams();
+  const petType = params?.pet || "Unknown";
+  const petName = params?.petName || "Unknown";
 
-export default function PetFeederScreen() {
-  const { petName } = useLocalSearchParams<{ petName: string }>();
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [time, setTime] = useState<Date>(new Date());
-  const [weight, setWeight] = useState<string>("");
-  const [showTimePicker, setShowTimePicker] = useState<boolean>(false);
+  const [schedules, setSchedules] = useState([]);
+  const [showPicker, setShowPicker] = useState(false);
+  const [selectedTime, setSelectedTime] = useState(new Date());
+  const [weight, setWeight] = useState("");
   const navigation = useNavigation();
 
-  // DISABLE GESTURES
   useEffect(() => {
     navigation.setOptions({
-      headerLeft: () => null, 
-      gestureEnabled: false, 
+      headerLeft: () => null,
+      gestureEnabled: false,
     });
 
-    // DISABLE BACK 
-    const handleBackPress = () => true; 
+    const handleBackPress = () => true;
     BackHandler.addEventListener("hardwareBackPress", handleBackPress);
 
     return () => {
@@ -33,116 +29,99 @@ export default function PetFeederScreen() {
     };
   }, [navigation]);
 
-  const addSchedule = () => {
-    if (weight.trim() !== "") {
-      const newSchedule: Schedule = { time: time.toLocaleTimeString(), weight, isOn: true };
-      setSchedules([...schedules, newSchedule]);
+  useEffect(() => {
+    const loadSchedules = async () => {
+      const savedSchedules = await AsyncStorage.getItem("schedules");
+      if (savedSchedules) setSchedules(JSON.parse(savedSchedules));
+    };
+    loadSchedules();
+  }, []);
+
+  useEffect(() => {
+    AsyncStorage.setItem("schedules", JSON.stringify(schedules));
+  }, [schedules]);
+
+  const addFeedingTime = () => {
+    if (!weight.trim()) {
+      alert("Please enter the weight.");
+      return;
+    }
+    setShowPicker(true);
+  };
+
+  const onTimeSelected = (event, selectedTime) => {
+    setShowPicker(false);
+    if (selectedTime instanceof Date && !isNaN(selectedTime)) { 
+      setSchedules([...schedules, { 
+        id: Date.now().toString(), 
+        time: selectedTime.toISOString(), 
+        enabled: true, 
+        weight: `${weight}g` 
+      }]);
       setWeight("");
     }
   };
 
+  const toggleSchedule = (id) => {
+    setSchedules(schedules.map(item => 
+      item.id === id ? { ...item, enabled: !item.enabled } : item
+    ));
+  };
+
+  const deleteSchedule = (id) => {
+    setSchedules(schedules.filter(item => item.id !== id));
+  };
+
+  const formatTime = (time) => {
+    if (!(time instanceof Date)) {
+      time = new Date(time);
+    }
+    let hours = time.getHours();
+    let minutes = time.getMinutes();
+    let ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12 || 12;
+    return `${hours}:${minutes.toString().padStart(2, "0")} ${ampm}`;
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{petName}'s Feeding Schedule</Text>
-      <ScrollView style={styles.scrollContainer}>
+    <View style={{ flex: 1, padding: 20 }}>
+      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10 }}>Automatic Scheduled Pet Feeder</Text>
+      <Text style={{ fontSize: 18, marginBottom: 5 }}>Pet Name: {petName}</Text>
+      <Text style={{ fontSize: 18, marginBottom: 15 }}>Pet Type: {petType}</Text>
+      <ScrollView style={{ marginBottom: 20 }}>
         {schedules.length === 0 ? (
-          <Text style={styles.noScheduleText}>No schedules yet. Add one below.</Text>
+          <Text style={{ fontSize: 16, textAlign: "center", marginVertical: 10 }}>No schedules yet. Add one below.</Text>
         ) : (
-          schedules.map((schedule, index) => (
-            <View key={index} style={styles.scheduleItem}>
-              <Text>Time: {schedule.time}</Text>
-              <Text>Weight: {schedule.weight}g</Text>
-              <TouchableOpacity>
-                <Text style={styles.toggleText}>{schedule.isOn ? "ON" : "OFF"}</Text>
+          schedules.map((item) => (
+            <View key={item.id} style={{ flexDirection: "row", alignItems: "center", marginBottom: 10, padding: 10, backgroundColor: "#f9f9f9", borderRadius: 10 }}>
+              <Text style={{ flex: 1, fontSize: 18 }}>{formatTime(item.time)} - {item.weight}</Text>
+              <Switch value={item.enabled} onValueChange={() => toggleSchedule(item.id)} />
+              <TouchableOpacity onPress={() => deleteSchedule(item.id)} style={{ marginLeft: 10 }}>
+                <Text style={{ color: "red", fontWeight: "bold" }}>Delete</Text>
               </TouchableOpacity>
             </View>
           ))
         )}
       </ScrollView>
-
       <TextInput
-        style={styles.input}
-        placeholder="Food weight (g)"
+        placeholder="Enter weight (g)"
+        keyboardType="numeric"
         value={weight}
         onChangeText={setWeight}
-        keyboardType="numeric"
+        style={{ borderWidth: 1, borderColor: "#ccc", padding: 10, borderRadius: 5, marginBottom: 10 }}
       />
-      <TouchableOpacity onPress={() => setShowTimePicker(true)}>
-        <Text>Select Time: {time.toLocaleTimeString()}</Text>
-      </TouchableOpacity>
-
-      {showTimePicker && (
+      <Button title="Add Feeding Time" onPress={addFeedingTime} />
+      {showPicker && (
         <DateTimePicker
-          value={time}
+          value={selectedTime}
           mode="time"
-          display="default"
-          onChange={(event, selectedTime) => {
-            setShowTimePicker(false);
-            if (selectedTime) setTime(selectedTime);
-          }}
+          is24Hour={false}
+          display="spinner"
+          onChange={onTimeSelected}
         />
       )}
-
-      <TouchableOpacity style={styles.addButton} onPress={addSchedule}>
-        <Text style={styles.buttonText}>Add Feeding Time</Text>
-      </TouchableOpacity>
     </View>
   );
-}
+};
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-    backgroundColor: "#f8f9fa",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-  },
-  scrollContainer: {
-    width: "100%",
-    marginBottom: 20,
-  },
-  noScheduleText: {
-    fontSize: 16,
-    color: "#777",
-    textAlign: "center",
-    marginVertical: 20,
-  },
-  scheduleItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#cccccc",
-  },
-  toggleText: {
-    color: "#007bff",
-    fontWeight: "bold",
-  },
-  input: {
-    width: "100%",
-    padding: 10,
-    borderWidth: 1,
-    borderColor: "#cccccc",
-    borderRadius: 5,
-    marginBottom: 20,
-    backgroundColor: "#fff",
-  },
-  addButton: {
-    marginTop: 20,
-    padding: 15,
-    borderRadius: 10,
-    backgroundColor: "#28a745",
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-});
+export default PetFeeder;
