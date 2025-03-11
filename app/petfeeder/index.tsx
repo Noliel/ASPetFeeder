@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, FlatList, Switch } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, FlatList, Switch, Modal } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { getAuth, deleteUser, signOut } from "firebase/auth";
 import { getDatabase, ref, get, remove, set } from "firebase/database";
@@ -13,6 +13,7 @@ export default function PetFeeder() {
   const [selectedTime, setSelectedTime] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
   const [schedules, setSchedules] = useState([]); // List of scheduled feedings
+  const [showModal, setShowModal] = useState(false);
   const auth = getAuth();
   const db = getDatabase();
   const user = auth.currentUser;
@@ -153,6 +154,11 @@ export default function PetFeeder() {
       <Text style={styles.info}>Pet Name: {petName}</Text>
       <Text style={styles.info}>Pet Type: {petType}</Text>
       <Text style={styles.info}>Pet Weight: {petWeight} kg</Text>
+
+      <TouchableOpacity style={styles.recommendButton} onPress={() => setShowModal(true)}>
+          <Text style={styles.buttonText}>Recommended</Text>
+      </TouchableOpacity>
+      
       <Text style={styles.info}>Recommended Portion: {recommendedWeight} per meal</Text>
 
       <TextInput
@@ -198,6 +204,24 @@ export default function PetFeeder() {
       <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
         <Text style={styles.buttonText}>Delete Account</Text>
       </TouchableOpacity>
+
+      <Modal visible={showModal} transparent={true} animationType="slide">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.title}>Feeding Guide</Text>
+            <Text>- Below 5kg: 50g per meal</Text>
+            <Text>- 5-10kg: 120g per meal</Text>
+            <Text>- 10-20kg: 200g per meal</Text>
+            <Text>- 20-30kg: 300g per meal</Text>
+            <Text>- 30-40kg: 400g per meal</Text>
+            <Text>- 40kg+: 500g per meal</Text>
+            <TouchableOpacity style={styles.closeButton} onPress={() => setShowModal(false)}>
+              <Text style={styles.buttonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
 }
@@ -209,6 +233,38 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8f9fa",
     alignItems: "center",
   },
+  recommendButton: { 
+    padding: 10, 
+    backgroundColor: "#28a745", 
+    borderRadius: 5, 
+    alignItems: "center",
+  },
+
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+
+  modalContent: {
+    width: 300,
+    padding: 20,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    alignItems: "center",
+  },
+
+  closeButton: { 
+    padding: 10, 
+    marginTop: 15, 
+    backgroundColor: "#dc3545", 
+    borderRadius: 5, 
+    alignItems: "center", 
+    width: 100,
+  },
+  
+
   title: { 
     fontSize: 24, 
     fontWeight: "bold", 
