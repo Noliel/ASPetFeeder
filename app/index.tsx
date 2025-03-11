@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
+import { auth } from "./firebaseConfig";
+import { onAuthStateChanged } from "firebase/auth";
+import { useEffect } from "react";
+
 
 export default function Home() {
   const [selectedPet, setSelectedPet] = useState<string | null>(null);
@@ -10,10 +14,21 @@ export default function Home() {
     if (selectedPet) {
       router.push({
         pathname: "/petname",
-        params: { pet: selectedPet },
+        params: { petType: selectedPet },
       });
     }
   };
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        router.replace("/login");
+      }
+    });
+  
+    return unsubscribe;
+  }, []);
+  
 
   return (
     <View style={styles.container}>
