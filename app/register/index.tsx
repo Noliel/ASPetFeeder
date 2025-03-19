@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, BackHandler } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, BackHandler, Image } from "react-native";
 import { Link, useRouter, useNavigation } from "expo-router";
 import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { auth } from "../firebaseConfig";
@@ -97,6 +97,13 @@ export default function Register() {
 
   return (
     <View style={styles.container}>
+
+      {/* Top Image */}
+      <Image
+        source={require("../../assets/images/logo3.png")}
+        style={styles.image}
+      />
+
       <Text style={styles.title}>Create Account</Text>
       
       <TextInput
@@ -176,6 +183,12 @@ export default function Register() {
         </Text>
       </TouchableOpacity>
 
+      {/* Bottom Image */}
+      <Image
+        source={require("../../assets/images/pets.png")}
+        style={styles.bottomImage}
+      />
+
       <View style={styles.footer}>
         <Text>Already have an account? </Text>
         <Link href="/login" asChild replace={true}>
@@ -194,68 +207,90 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 20,
     backgroundColor: "#f8f9fa",
+    alignItems: "center", // Centers the image horizontally
   },
+
   title: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: "bold",
-    marginBottom: 30,
+    marginBottom: 10,
+    top: 50,
     textAlign: "center",
   },
-  input: {
+
+   input: {
     height: 50,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#A06CD5",
     borderRadius: 8,
-    padding: 10,
-    marginBottom: 15,
-    backgroundColor: "#fff",
+    padding: 5,
+    top: 60,
+    marginBottom: 10,
+    backgroundColor: "#DEC9E9",
+    width: "100%", // Ensures inputs align properly
   },
-  button: {
-    backgroundColor: "#007bff",
+
+   button: {
+    backgroundColor: "#A06CD5",
     padding: 15,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: 10,
+    top: 70,
+    width: "100%",
   },
+
   buttonText: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
   },
+
   footer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 20,
+    marginTop: 90,
   },
+
   link: {
-    color: "#007bff",
+    color: "#B185DB",
     fontWeight: "bold",
   },
+
   checklist: {
     marginVertical: 10,
+    width: "100%", // Ensures checklist aligns properly
   },
+
   checkItem: {
     color: '#ff0000',
-    fontSize: 14,
+    fontSize: 13,
+    bottom: 10,
+    top: 60,
     marginVertical: 2,
   },
+
   valid: {
     color: '#00aa00',
   },
+
   disabledButton: {
-    backgroundColor: "#cccccc",
+    backgroundColor: "#DEC9E9",
     padding: 15,
     borderRadius: 8,
     alignItems: "center",
     marginTop: 10,
+    top: 45,
+    width: "100%",
   },
+
   passwordContainer: {
     position: 'relative',
+    width: '100%',
   },
   eyeButton: {
     position: 'absolute',
     right: 10,
-    top: '50%',
+    top: '150%',
     transform: [{ translateY: -23 }],
     padding: 5,
   },
@@ -263,5 +298,24 @@ const styles = StyleSheet.create({
     color: "#007bff",
     fontWeight: "bold",
     fontSize: 14,
+  },
+
+  image: {
+    width: 300,
+    height: 300,
+    resizeMode: 'contain',
+    position: 'absolute', // Take it out of normal flow
+    bottom: 650,              // Adjust as needed
+    alignSelf: 'center',  // Center horizontally
+  },
+
+  bottomImage: {
+    width: 350,
+    height: 300,
+    resizeMode: "contain",
+    top: 200,
+    marginTop: 500,
+    position: 'absolute',
+    alignSelf: "center",
   },
 });

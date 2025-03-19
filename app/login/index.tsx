@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, BackHandler } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, BackHandler, Image } from "react-native";
 import { Link, useRouter, useNavigation  } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebaseConfig";
@@ -86,6 +86,14 @@ export default function Login() {
 
   return (
     <View style={styles.container}>
+
+      <Image
+    source={require('../../assets/images/logo3.png')}
+    style={styles.logo}
+    resizeMode="contain"
+  />
+
+
       <Text style={styles.title}>Pet Feeder Login</Text>
       
       <TextInput
@@ -158,63 +166,91 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
+    bottom: 90,
     marginBottom: 30,
     textAlign: "center",
   },
+
+  logo: {
+    width: 300,
+    height: 300,
+    bottom: 70,
+    alignSelf: 'center',
+  },
+
   input: {
     height: 50,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#A06CD5",
     borderRadius: 8,
+    bottom: 100,
     padding: 10,
     marginBottom: 15,
-    backgroundColor: "#fff",
+    backgroundColor: "#DEC9E9",
   },
+
   button: {
-    backgroundColor: "#007bff",
+    backgroundColor: "#DEC9E9",
     padding: 15,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: 10,
+    bottom: 90,
+    marginTop: 5, // Reduced to move the button higher
   },
+
   buttonText: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
+    marginBottom: -5, // Move button text higher
   },
+
   footer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 20,
+    bottom: 80,
+    marginTop: 10, // Move footer higher
   },
+
   link: {
-    color: "#007bff",
+    color: "#B185DB",
     fontWeight: "bold",
+    marginTop: -5, // Move link higher
   },
+
   captchaContainer: {
-    marginBottom: 15,
+    marginBottom: 10, // Move container higher
   },
+
   captchaQuestion: {
     fontSize: 16,
-    marginBottom: 5,
+    bottom: 110,
+    marginBottom: 2, // Reduce space below
+    marginTop: -5,   // Move question higher
   },
+
   captchaInput: {
     height: 50,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#A06CD5",
     borderRadius: 8,
+    bottom: 100,
     padding: 10,
-    backgroundColor: "#fff",
+    backgroundColor: "#DEC9E9",
+    marginTop: -5, // Move input higher
   },
+
   passwordContainer: {
-    position: 'relative',
+    position: "relative",
+    justifyContent: "center",
   },
   eyeButton: {
-    position: 'absolute',
+    position: "absolute",
     right: 10,
-    top: '50%',
+    bottom: "155%",
     transform: [{ translateY: -23 }],
     padding: 5,
+    zIndex: 1, // Add this to bring the button to the front
   },
   eyeButtonText: {
     color: "#007bff",

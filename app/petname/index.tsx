@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 
 export default function PetName() {
@@ -22,6 +22,13 @@ export default function PetName() {
 
   return (
     <View style={styles.container}>
+
+             <Image
+              source={require('../../assets/images/logo3.png')}
+              style={styles.foregroundImage}
+              resizeMode="contain"
+            />
+
       <Text style={styles.title}>Enter Your Pet's Details</Text>
 
       <TextInput
@@ -47,9 +54,47 @@ export default function PetName() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#f8f9fa" },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
-  input: { width: "80%", padding: 10, borderWidth: 1, borderColor: "#ccc", borderRadius: 8, backgroundColor: "#fff", marginBottom: 20, textAlign: "center" },
-  continueButton: { padding: 15, backgroundColor: "#007bff", borderRadius: 10, width: 200, alignItems: "center" },
-  buttonText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+  container: { 
+  flex: 1, 
+  justifyContent: "center",
+  alignItems: "center", 
+  backgroundColor: "#f8f9fa" },
+
+  title: {
+  fontSize: 24, 
+  fontWeight: "bold",
+  bottom: 80,
+  marginBottom: 20 },
+
+  input: { 
+  width: "80%",
+  padding: 10,
+  borderWidth: 1, 
+  borderColor: "#A06CD5", 
+  bottom: 80,
+  borderRadius: 8, 
+  backgroundColor: "#DEC9E9", 
+  marginBottom: 20, 
+  textAlign: "center" },
+
+  continueButton: { 
+  padding: 15, 
+  backgroundColor: "#A06CD5",
+  borderRadius: 10, 
+  bottom: 50,
+  width: 200, 
+  alignItems: "center" },
+
+  buttonText: { 
+  color: "#fff",
+  fontSize: 16, 
+  fontWeight: "bold" },
+
+  foregroundImage: {
+    height: 260,
+    position: 'relative', 
+    bottom: 90, 
+    left: 5, 
+  },
 });
+

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { auth } from "./firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
@@ -45,6 +45,13 @@ export default function Home() {
 
   return (
     <View style={styles.container}>
+
+<Image
+        source={require('../assets/images/logo3.png')}
+        style={styles.foregroundImage}
+      />
+
+
       <Text style={styles.title}>Select Your Pet</Text>
 
       <View style={styles.buttonContainer}>
@@ -81,6 +88,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#f8f9fa",
   },
+
+  foregroundImage: {
+    width: 300, // Adjust size
+    height: 300,
+    position: 'absolute', // Floating on top
+    top: 50, // Adjust positioning
+    right: 60, // Adjust positioning
+    zIndex: 10, // Bring to front
+  },
+
+
+
+
   title: {
     fontSize: 24,
     fontWeight: "bold",
@@ -93,23 +113,23 @@ const styles = StyleSheet.create({
   },
   optionButton: {
     padding: 15,
-    backgroundColor: "#ddd",
+    backgroundColor: "#DEC9E9",
     borderRadius: 10,
     width: 100,
     alignItems: "center",
   },
   selected: {
-    backgroundColor: "#4CAF50", // Green for selected option
+    backgroundColor: "#B185DB", // Green for selected option
   },
   continueButton: {
     padding: 15,
-    backgroundColor: "#007bff", // Blue for active button
+    backgroundColor: "#C19EE0", // Blue for active button
     borderRadius: 10,
     width: 200,
     alignItems: "center",
   },
   disabled: {
-    backgroundColor: "#A9A9A9", // Grey when disabled
+    backgroundColor: "#C0B5DB", // Grey when disabled
   },
   buttonText: {
     color: "#fff",

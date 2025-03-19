@@ -1,10 +1,13 @@
+// PetFeeder.js
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, FlatList, Switch, Modal } from "react-native";
+import Icon from "react-native-vector-icons/Ionicons";
+import {  View,  Text,  TextInput,  TouchableOpacity,  StyleSheet,  Alert,  FlatList,  Switch, Modal, } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { getAuth, deleteUser, signOut } from "firebase/auth";
 import { getDatabase, ref, get, remove, set } from "firebase/database";
 
 export default function PetFeeder() {
+  // State Variables
   const [petName, setPetName] = useState("");
   const [petType, setPetType] = useState("");
   const [petWeight, setPetWeight] = useState("");
@@ -12,20 +15,23 @@ export default function PetFeeder() {
   const [manualWeight, setManualWeight] = useState("");
   const [selectedTime, setSelectedTime] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
-  const [schedules, setSchedules] = useState([]); // List of scheduled feedings
+  const [schedules, setSchedules] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+
+  // Firebase Auth and DB
   const auth = getAuth();
   const db = getDatabase();
   const user = auth.currentUser;
 
-  // FIXED CODE
+  // Fetch Pet Data
   useEffect(() => {
     const fetchPetData = async () => {
       if (user) {
         try {
           const userRef = ref(db, `users/${user.uid}`);
           const snapshot = await get(userRef);
-    
+
           if (snapshot.exists()) {
             const data = snapshot.val();
             setPetName(data.petName || "Unknown");
@@ -34,7 +40,7 @@ export default function PetFeeder() {
               setPetWeight(data.petWeight);
               const calculatedWeight = calculateRecommendedWeight(data.petWeight);
               setRecommendedWeight(calculatedWeight);
-              setManualWeight(calculatedWeight); 
+              setManualWeight(calculatedWeight);
             }
             if (data.schedules) {
               setSchedules(Object.values(data.schedules));
@@ -45,26 +51,11 @@ export default function PetFeeder() {
         }
       }
     };
-    
 
     fetchPetData();
   }, [user]);
 
-  useEffect(() => {
-    const fetchSchedules = async () => {
-      if (user) {
-        const schedulesRef = ref(db, `users/${user.uid}/schedules`);
-        const snapshot = await get(schedulesRef);
-        if (snapshot.exists()) {
-          setSchedules(Object.values(snapshot.val())); 
-        }
-      }
-    };
-
-    fetchSchedules();
-  }, [user]);
-
-
+  // Calculate Recommended Weight
   const calculateRecommendedWeight = (weight) => {
     if (weight <= 5) return "50";
     if (weight > 5 && weight <= 10) return "120";
@@ -74,22 +65,24 @@ export default function PetFeeder() {
     return "500";
   };
 
+  // Add Feeding Time
   const handleAddFeedingTime = () => {
+    setSelectedTime(new Date()); // Reset time to ensure picker opens
     setShowPicker(true);
   };
-
-
-  // NOTE: FIXED CODE SO PRESSING "Cancel" DOES NOT ADD TO LIST/DB
+  
+  
+  // Handle Time Selection
   const onTimeSelected = async (event, time) => {
-    setShowPicker(false);
-    if (event.type === 'dismissed' || !time) {
+    if (event.type === "dismissed" || !time) {
+      setShowPicker(false);
       return;
     }
   
     const newSchedule = {
       id: Date.now().toString(),
-      time: time.toLocaleTimeString(),
-      weight: manualWeight,
+      time: time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      weight: manualWeight || recommendedWeight, // Use manual or recommended weight
       isOn: true,
     };
   
@@ -100,8 +93,14 @@ export default function PetFeeder() {
       const schedulesRef = ref(db, `users/${user.uid}/schedules`);
       await set(schedulesRef, updatedSchedules);
     }
+  
+    // Reset and close picker after selection
+    setShowPicker(false);
+    setSelectedTime(new Date());
   };
+  
 
+  // Toggle Schedule Switch
   const toggleSchedule = async (id) => {
     const updatedSchedules = schedules.map((item) =>
       item.id === id ? { ...item, isOn: !item.isOn } : item
@@ -114,6 +113,7 @@ export default function PetFeeder() {
     }
   };
 
+  // Delete Schedule
   const deleteSchedule = async (id) => {
     const updatedSchedules = schedules.filter((item) => item.id !== id);
     setSchedules(updatedSchedules);
@@ -124,6 +124,7 @@ export default function PetFeeder() {
     }
   };
 
+  // Logout
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -133,7 +134,7 @@ export default function PetFeeder() {
     }
   };
 
-
+  // Delete Account
   const handleDeleteAccount = async () => {
     if (!user) return;
 
@@ -169,9 +170,9 @@ export default function PetFeeder() {
       <Text style={styles.info}>Pet Weight: {petWeight} kg</Text>
 
       <TouchableOpacity style={styles.recommendButton} onPress={() => setShowModal(true)}>
-          <Text style={styles.buttonText}>Recommended</Text>
+        <Text style={styles.buttonText}>Recommended</Text>
       </TouchableOpacity>
-      
+
       <Text style={styles.info}>Recommended Portion: {recommendedWeight}g per meal</Text>
 
       <TextInput
@@ -182,26 +183,46 @@ export default function PetFeeder() {
         onChangeText={setManualWeight}
       />
 
-      <TouchableOpacity style={styles.timeButton} onPress={handleAddFeedingTime}>
-        <Text style={styles.buttonText}>Select Feeding Time</Text>
-      </TouchableOpacity>
+<TouchableOpacity style={styles.timeButton} onPress={handleAddFeedingTime}>
+  <Text style={styles.buttonText}>Select Feeding Time</Text>
+</TouchableOpacity>
 
-      {showPicker && (
-        <DateTimePicker 
+{showPicker && (
+  <Modal transparent={true} animationType="fade" visible={showPicker}>
+    <View style={styles.modalContainer}>
+      <View style={styles.modalContent}>
+        <DateTimePicker
           value={selectedTime}
           mode="time"
           is24Hour={false}
           display="spinner"
           onChange={onTimeSelected}
         />
-      )}
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={() => {
+            setShowPicker(false);
+            setSelectedTime(new Date()); // Reset after cancel
+          }}
+        >
+          <Text style={styles.buttonText}>Cancel</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </Modal>
+)}
+
+
+
 
       <FlatList
         data={schedules}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.scheduleItem}>
-            <Text>{item.time} - {item.weight}</Text>
+            <Text>
+              {item.time} - {item.weight}g
+            </Text>
             <Switch value={item.isOn} onValueChange={() => toggleSchedule(item.id)} />
             <TouchableOpacity onPress={() => deleteSchedule(item.id)}>
               <Text style={styles.deleteText}>Delete</Text>
@@ -210,14 +231,7 @@ export default function PetFeeder() {
         )}
       />
 
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.buttonText}>Logout</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
-        <Text style={styles.buttonText}>Delete Account</Text>
-      </TouchableOpacity>
-
+      {/* Modal for Feeding Guide */}
       <Modal visible={showModal} transparent={true} animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
@@ -228,38 +242,120 @@ export default function PetFeeder() {
             <Text>- 20-30kg: 300g per meal</Text>
             <Text>- 30-40kg: 400g per meal</Text>
             <Text>- 40kg+: 500g per meal</Text>
-            <TouchableOpacity style={styles.closeButton} onPress={() => setShowModal(false)}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setShowModal(false)}
+            >
               <Text style={styles.buttonText}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
+      {/* Modal for Settings */}
+      <Modal visible={showSettings} transparent={true} animationType="fade">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.title}>Settings</Text>
+            <TouchableOpacity style={styles.settingsButton} onPress={handleLogout}>
+              <Text style={styles.settingsText}>Logout</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.settingsButton} onPress={handleDeleteAccount}>
+              <Text style={styles.settingsText}>Delete Account</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setShowSettings(false)}
+            >
+              <Text style={styles.buttonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Settings Button */}
+      <View style={styles.settingsIcon}>
+        <TouchableOpacity onPress={() => setShowSettings(true)}>
+          <Icon name="settings-outline" size={30} color="#333" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
+// Styles
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    padding: 20, 
+  container: {
+    flex: 1,
+    padding: 20,
     backgroundColor: "#f8f9fa",
     alignItems: "center",
   },
-  recommendButton: { 
-    padding: 10, 
-    backgroundColor: "#28a745", 
-    borderRadius: 5, 
+  title: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 10,
+    top: 20,
+  },
+  info: {
+    fontSize: 18,
+    marginBottom: 5,
+    top: 30,
+  },
+  recommendButton: {
+    padding: 10,
+    backgroundColor: "#A06CD5",
+    borderRadius: 5,
+    marginTop: 10,
+    top: 25,
+  },
+  input: {
+    width: "80%",
+    padding: 10,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    backgroundColor: "#DEC9E9",
+    marginBottom: 10,
+    textAlign: "center",
+    top: 30,
+  },
+  timeButton: {
+    padding: 15,
+    backgroundColor: "#A06CD5",
+    borderRadius: 10,
+    width: 200,
     alignItems: "center",
+    marginBottom: 10,
+    top: 40, //time
   },
 
+  scheduleItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#DAC3E8",
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 10,
+    top: 55,
+  },
+  deleteText: {
+    color: "red",
+    fontWeight: "bold",
+  },
+  settingsIcon: {
+    marginTop: 20,
+    alignItems: "flex-end",
+    bottom: 840,
+    left: 185,
+  },
   modalContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "rgba(0,0,0,0.5)",
   },
-
   modalContent: {
     width: 300,
     padding: 20,
@@ -267,86 +363,28 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
   },
-
-  closeButton: { 
-    padding: 10, 
-    marginTop: 15, 
-    backgroundColor: "#dc3545", 
-    borderRadius: 5, 
-    alignItems: "center", 
+  
+  closeButton: {
+    padding: 10,
+    marginTop: 15,
+    backgroundColor: "#dc3545",
+    borderRadius: 5,
+    alignItems: "center",
     width: 100,
   },
-  
-
-  title: { 
-    fontSize: 24, 
-    fontWeight: "bold", 
-    marginBottom: 10 
-  },
-  info: { 
-    fontSize: 18, 
-    marginBottom: 5 
-  },
-  input: { 
-    width: "80%", 
-    padding: 10, 
-    borderWidth: 1, 
-    borderColor: "#ccc", 
-    borderRadius: 5, 
-    backgroundColor: "#fff", 
-    marginBottom: 10, 
-    textAlign: "center"
-  },
-  timeButton: { 
-    padding: 15, 
-    backgroundColor: "#007bff", 
-    borderRadius: 10, 
-    width: 200, 
-    alignItems: "center", 
-    marginBottom: 10,
-  },
-  addButton: { 
-    padding: 15, 
-    backgroundColor: "#28a745", 
-    borderRadius: 10, 
-    width: 200, 
-    alignItems: "center", 
-    marginBottom: 10,
-  },
-  scheduleItem: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    justifyContent: "space-between",
-    backgroundColor: "#e9ecef",
-    padding: 10, 
-    borderRadius: 10, 
-    marginVertical: 5, 
-    width: "100%",
-  },
-  deleteText: { 
-    color: "red", 
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
     fontWeight: "bold",
   },
-  logoutButton: { 
-    padding: 15, 
-    backgroundColor: "#ffcc00", 
-    borderRadius: 10, 
-    width: 200, 
-    alignItems: "center", 
+  settingsButton: {
+    padding: 10,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 5,
     marginTop: 10,
   },
-  deleteButton: { 
-    padding: 15, 
-    backgroundColor: "red", 
-    borderRadius: 10, 
-    width: 200, 
-    alignItems: "center", 
-    marginTop: 10,
-  },
-  buttonText: { 
-    color: "#fff", 
-    fontSize: 16, 
-    fontWeight: "bold" 
+  settingsText: {
+    color: "#333",
+    fontSize: 16,
   },
 });
-
