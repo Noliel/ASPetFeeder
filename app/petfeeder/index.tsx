@@ -18,25 +18,34 @@ export default function PetFeeder() {
   const db = getDatabase();
   const user = auth.currentUser;
 
+  // FIXED CODE
   useEffect(() => {
     const fetchPetData = async () => {
       if (user) {
-        const userRef = ref(db, `users/${user.uid}`);
-        const snapshot = await get(userRef);
-
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          setPetName(data.petName || "Unknown");
-          setPetType(data.petType || "Unknown");
-          if (data.petWeight) {
-            setPetWeight(data.petWeight);
-            const calculatedWeight = calculateRecommendedWeight(data.petWeight);
-            setRecommendedWeight(calculatedWeight);
-            setManualWeight(calculatedWeight); 
+        try {
+          const userRef = ref(db, `users/${user.uid}`);
+          const snapshot = await get(userRef);
+    
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            setPetName(data.petName || "Unknown");
+            setPetType(data.petType || "Unknown");
+            if (data.petWeight) {
+              setPetWeight(data.petWeight);
+              const calculatedWeight = calculateRecommendedWeight(data.petWeight);
+              setRecommendedWeight(calculatedWeight);
+              setManualWeight(calculatedWeight); 
+            }
+            if (data.schedules) {
+              setSchedules(Object.values(data.schedules));
+            }
           }
+        } catch (error) {
+          console.error("Error fetching data:", error);
         }
       }
     };
+    
 
     fetchPetData();
   }, [user]);
@@ -57,35 +66,39 @@ export default function PetFeeder() {
 
 
   const calculateRecommendedWeight = (weight) => {
-    if (weight <= 5) return "50g";
-    if (weight > 5 && weight <= 10) return "120g";
-    if (weight > 10 && weight <= 20) return "200g";
-    if (weight > 20 && weight <= 30) return "300g";
-    if (weight > 30 && weight <= 40) return "400g";
-    return "500g";
+    if (weight <= 5) return "50";
+    if (weight > 5 && weight <= 10) return "120";
+    if (weight > 10 && weight <= 20) return "200";
+    if (weight > 20 && weight <= 30) return "300";
+    if (weight > 30 && weight <= 40) return "400";
+    return "500";
   };
 
   const handleAddFeedingTime = () => {
     setShowPicker(true);
   };
 
+
+  // NOTE: FIXED CODE SO PRESSING "Cancel" DOES NOT ADD TO LIST/DB
   const onTimeSelected = async (event, time) => {
     setShowPicker(false);
-    if (time) {
-      const newSchedule = {
-        id: Date.now().toString(),
-        time: time.toLocaleTimeString(),
-        weight: manualWeight,
-        isOn: true,
-      };
-
-      const updatedSchedules = [...schedules, newSchedule];
-      setSchedules(updatedSchedules);
-
-      if (user) {
-        const schedulesRef = ref(db, `users/${user.uid}/schedules`);
-        await set(schedulesRef, updatedSchedules);
-      }
+    if (event.type === 'dismissed' || !time) {
+      return;
+    }
+  
+    const newSchedule = {
+      id: Date.now().toString(),
+      time: time.toLocaleTimeString(),
+      weight: manualWeight,
+      isOn: true,
+    };
+  
+    const updatedSchedules = [...schedules, newSchedule];
+    setSchedules(updatedSchedules);
+  
+    if (user) {
+      const schedulesRef = ref(db, `users/${user.uid}/schedules`);
+      await set(schedulesRef, updatedSchedules);
     }
   };
 
@@ -159,7 +172,7 @@ export default function PetFeeder() {
           <Text style={styles.buttonText}>Recommended</Text>
       </TouchableOpacity>
       
-      <Text style={styles.info}>Recommended Portion: {recommendedWeight} per meal</Text>
+      <Text style={styles.info}>Recommended Portion: {recommendedWeight}g per meal</Text>
 
       <TextInput
         style={styles.input}
@@ -174,7 +187,7 @@ export default function PetFeeder() {
       </TouchableOpacity>
 
       {showPicker && (
-        <DateTimePicker
+        <DateTimePicker 
           value={selectedTime}
           mode="time"
           is24Hour={false}

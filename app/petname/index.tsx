@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-nativ
 import { useRouter, useLocalSearchParams } from "expo-router";
 
 export default function PetName() {
-  const { petType } = useLocalSearchParams(); // Receive pet type but NOT display it here
+  const { petType } = useLocalSearchParams();
   const [petName, setPetName] = useState("");
   const [petWeight, setPetWeight] = useState("");
   const router = useRouter();
@@ -14,7 +14,6 @@ export default function PetName() {
       return;
     }
 
-    // Navigate to Confirm page with pet type, name, and weight
     router.push({
       pathname: "/confirm",
       params: { petType, petName, petWeight },

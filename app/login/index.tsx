@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, BackHandler
 import { Link, useRouter, useNavigation  } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebaseConfig";
+import { getDatabase, ref, get } from "firebase/database";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -12,6 +13,7 @@ export default function Login() {
   const [num1, setNum1] = useState(0);
   const [num2, setNum2] = useState(0);
   const [expectedAnswer, setExpectedAnswer] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const navigation = useNavigation();
 
@@ -60,13 +62,20 @@ export default function Login() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       if (!userCredential.user.emailVerified) {
         await auth.signOut();
-        Alert.alert(
-          "Email Not Verified",
-          "Please verify your email before logging in."
-        );
+        Alert.alert("Email Not Verified", "Please verify your email before logging in.");
         return;
       }
-      router.replace("/");
+      
+      // IF USER HAS EXISTING DATA
+      const db = getDatabase();
+      const userRef = ref(db, `users/${userCredential.user.uid}`);
+      const snapshot = await get(userRef);
+  
+      if (snapshot.exists() && snapshot.val().petName) {
+        router.replace("/petfeeder"); // GO TO PETFEEDER INDEX IF HAS EXISTING DATA
+      } else {
+        router.replace("/"); // IF NEW USER
+      }
     } catch (error) {
       Alert.alert("Login Error", error.message);
       generateCaptcha();
@@ -88,13 +97,23 @@ export default function Login() {
         keyboardType="email-address"
       />
       
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+      <View style={styles.passwordContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={!showPassword}
+        />
+        <TouchableOpacity
+          style={styles.eyeButton}
+          onPress={() => setShowPassword(!showPassword)}
+        >
+          <Text style={styles.eyeButtonText}>
+            {showPassword ? 'Hide' : 'Show'}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.captchaContainer}>
         <Text style={styles.captchaQuestion}>What is {num1} + {num2}?</Text>
@@ -186,5 +205,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     backgroundColor: "#fff",
+  },
+  passwordContainer: {
+    position: 'relative',
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: 10,
+    top: '50%',
+    transform: [{ translateY: -23 }],
+    padding: 5,
+  },
+  eyeButtonText: {
+    color: "#007bff",
+    fontWeight: "bold",
+    fontSize: 14,
   },
 });

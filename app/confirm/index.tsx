@@ -1,12 +1,41 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { getAuth } from "firebase/auth";
+import { getDatabase, ref, set } from "firebase/database";
 
+
+// NOTE: FIXED CODE SO PET NAME, PET TYPE, AND PET WEIGHT IS POSTED TO PETFEEDER INDEX
 export default function Confirm() {
-  const { petType, petName, petWeight } = useLocalSearchParams(); // Get parameters from Pet Name page
+  const { petType, petName, petWeight } = useLocalSearchParams(); 
   const router = useRouter();
 
-  const handleConfirm = () => {
-    router.push("/petfeeder"); // Navigate to the Pet Feeder page
+
+  const handleConfirm = async () => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    
+    if (!user) {
+      Alert.alert("Error", "User not authenticated.");
+      return;
+    }
+
+    try {
+      const db = getDatabase();
+      const userRef = ref(db, `users/${user.uid}`);
+      
+      
+      await set(userRef, {
+        petName: petName || "Unknown",
+        petType: petType || "Unknown",
+        petWeight: petWeight || "",
+        
+        schedules: [] 
+      });
+      
+      router.replace("/petfeeder");
+    } catch (error) {
+      Alert.alert("Error", "Failed to save pet details. Please try again.");
+    }
   };
 
   return (

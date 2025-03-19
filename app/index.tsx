@@ -4,8 +4,10 @@ import { useRouter } from "expo-router";
 import { auth } from "./firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { useEffect } from "react";
+import { getDatabase, ref, get } from "firebase/database";
 
 
+// FIXED CODE
 export default function Home() {
   const [selectedPet, setSelectedPet] = useState<string | null>(null);
   const router = useRouter();
@@ -20,14 +22,25 @@ export default function Home() {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         router.replace("/login");
+      } else {
+        const db = getDatabase();
+        const userRef = ref(db, `users/${user.uid}`);
+        const snapshot = await get(userRef);
+        
+        if (snapshot.exists() && snapshot.val().petName) {
+          router.replace("/petfeeder");
+        } else {
+          setSelectedPet(null);
+        }
       }
     });
   
     return unsubscribe;
   }, []);
+  
   
 
   return (
