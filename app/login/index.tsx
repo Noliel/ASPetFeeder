@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
   link: {
     color: "#B185DB",
     fontWeight: "bold",
-    marginTop: -5, // Move link higher
+    marginTop: 0, // Move link higher
   },
 
   captchaContainer: {

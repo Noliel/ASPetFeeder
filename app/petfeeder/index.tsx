@@ -18,6 +18,10 @@ export default function PetFeeder() {
   const [schedules, setSchedules] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [petDetails, setPetDetails] = useState({ name: '', type: '', weight: ''});
+  const [tempDetails, setTempDetails] = useState({ name: '', type: '', weight: '' });
+  const [settingsVisible, setSettingsVisible] = useState(false);
+  const [updateModalVisible, setUpdateModalVisible] = useState(false);
 
   // Firebase Auth and DB
   const auth = getAuth();
@@ -54,6 +58,17 @@ export default function PetFeeder() {
 
     fetchPetData();
   }, [user]);
+
+    // 🔹 ADDED FEATURE: Fetch Pet Details from Firebase
+    const fetchPetDetails = async () => {
+      if (!user) return;
+      const docRef = doc(db, 'users', user.uid);
+      const docSnap = await getDoc(docRef);
+  
+      if (docSnap.exists()) {
+        setPetDetails(docSnap.data().petDetails || {});
+      }
+    };
 
   // Calculate Recommended Weight
   const calculateRecommendedWeight = (weight) => {
@@ -134,6 +149,24 @@ export default function PetFeeder() {
     }
   };
 
+  // MODAL FOR UPDATE
+  const openUpdateModal = () => {
+    setSettingsVisible(false);
+    setTempDetails(petDetails);
+    setUpdateModalVisible(true);
+  };
+
+  const savePetDetails = async () => {
+    if (!user) return;
+    const docRef = doc(db, 'users', user.uid);
+    await updateDoc(docRef, { petDetails: tempDetails });
+
+    setPetDetails(tempDetails);
+    setUpdateModalVisible(false);
+  };
+
+  
+
   // Delete Account
   const handleDeleteAccount = async () => {
     if (!user) return;
@@ -163,7 +196,16 @@ export default function PetFeeder() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Automatic Scheduled Pet Feeder</Text>
+
+      <View style={styles.top_layer}>
+      <Text style={styles.title}>PET FEEDER</Text>
+      <View style={styles.settingsIcon}>
+      <TouchableOpacity onPress={() => setShowSettings(true)}>
+          <Icon name="settings-outline" size={30} color="#333" />
+      </TouchableOpacity>
+      </View>
+      </View>
+
 
       <Text style={styles.info}>Pet Name: {petName}</Text>
       <Text style={styles.info}>Pet Type: {petType}</Text>
@@ -198,22 +240,10 @@ export default function PetFeeder() {
           display="spinner"
           onChange={onTimeSelected}
         />
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={() => {
-            setShowPicker(false);
-            setSelectedTime(new Date()); // Reset after cancel
-          }}
-        >
-          <Text style={styles.buttonText}>Cancel</Text>
-        </TouchableOpacity>
       </View>
     </View>
   </Modal>
 )}
-
-
-
 
       <FlatList
         data={schedules}
@@ -257,6 +287,10 @@ export default function PetFeeder() {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.title}>Settings</Text>
+
+{/*             <TouchableOpacity style={styles.settingsButton} onPress={openUpdateModal}>
+              <Text style={styles.settingsText}>Update</Text>
+            </TouchableOpacity> */}
             <TouchableOpacity style={styles.settingsButton} onPress={handleLogout}>
               <Text style={styles.settingsText}>Logout</Text>
             </TouchableOpacity>
@@ -273,12 +307,25 @@ export default function PetFeeder() {
         </View>
       </Modal>
 
-      {/* Settings Button */}
-      <View style={styles.settingsIcon}>
-        <TouchableOpacity onPress={() => setShowSettings(true)}>
-          <Icon name="settings-outline" size={30} color="#333" />
-        </TouchableOpacity>
-      </View>
+{/*       <Modal visible={updateModalVisible} transparent animationType="slide">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Update Pet Details</Text>
+
+            <TextInput style={styles.input} placeholder="Pet Name" value={petName} onChange={(text) => setTempDetails({ ...TempDetails, name: text})}/>
+            <TextInput style={styles.input} placeholder="Pet Type" value={petType} onChange={(text) => setTempDetails({ ...TempDetails, type: text})}/>
+            <TextInput style={styles.input} placeholder="Pet Weight (g)" value={petWeight} onChange={(text) => setTempDetails({ ...TempDetails, weight: text})}/>
+
+            <TouchableOpacity onPress={savePetDetails} style={styles.saveButton}>
+              <Text style={styles.saveText}>Save Changes</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => setUpdateModalVisible(false)} style={styles.closeButton}>
+              <Text style={styles.closeText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal> */}
     </View>
   );
 }
@@ -293,6 +340,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
+    fontFamily: "Nunito",
     fontWeight: "bold",
     marginBottom: 10,
     top: 20,
@@ -344,12 +392,26 @@ const styles = StyleSheet.create({
     color: "red",
     fontWeight: "bold",
   },
-  settingsIcon: {
-    marginTop: 20,
-    alignItems: "flex-end",
-    bottom: 840,
-    left: 185,
+
+  // TOP LAYER
+
+  top_layer: {
+    flexDirection: "row",
+    position: "relative",
+    width: "100%",
+    paddingHorizontal: 15,
+    alignItems: "center"
   },
+
+  settingsIcon: {
+    position: "absolute",
+    right: 2,
+    top: "50%",
+  },
+
+  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 10 },
+
+
   modalContainer: {
     flex: 1,
     justifyContent: "center",
